@@ -1,13 +1,16 @@
 package uq.androidhack.flashspeak;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
+import java.io.File;
 import java.net.URI;
 
 import uq.androidhack.flashspeak.interfaces.TargetFileListener;
@@ -90,13 +93,16 @@ public class VisualisationFragment extends Fragment implements TargetFileListene
     }
 
     @Override
-    public void onFileChange(URI uri) {
-
+    public void onFileChange(String uri) {
+        File file = new File (uri);
+        ImageView ogAudioSampleImageView = (ImageView)getView().findViewById(R.id.originalAudioSampleVisualisation);
+        ogAudioSampleImageView.setImageDrawable(Drawable.createFromPath(file.getAbsolutePath()));
     }
 
     @Override
     public void onRecording(URI uri) {
-
+        ImageView targetAudioSampleImageView = (ImageView)getView().findViewById(R.id.usersAudioSampleVisualisation);
+        targetAudioSampleImageView.setImageResource(android.R.color.transparent);
     }
 
     @Override

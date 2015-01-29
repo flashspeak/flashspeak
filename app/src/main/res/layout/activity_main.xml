@@ -22,4 +22,10 @@
         android:name="uq.androidhack.flashspeak.NavigationDrawerFragment"
         tools:layout="@layout/fragment_navigation_drawer" />
 
+    <fragment android:id="@+id/visualisation"
+        android:layout_width="@dimen/navigation_drawer_width" android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:name="uq.androidhack.flashspeak.VisualisationFragment"
+        tools:layout="@layout/fragment_visualisation" />
+
 </android.support.v4.widget.DrawerLayout>
