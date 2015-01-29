@@ -1,37 +1,37 @@
 package uq.androidhack.flashspeak;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
-import android.os.Bundle;
+import android.net.Uri;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
+import android.content.Context;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-
-import uq.androidhack.flashspeak.interfaces.TargetFileListener;
-import uq.androidhack.flashspeak.interfaces.TrialFileListener;
+import android.support.v4.widget.DrawerLayout;
+import android.widget.ArrayAdapter;
+import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks, VisualisationFragment.OnFragmentInteractionListener {
+        implements NavigationDrawerFragment.NavigationDrawerCallbacks, RecordFragment.OnFragmentInteractionListener{
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
     private NavigationDrawerFragment mNavigationDrawerFragment;
-    private VisualisationFragment visualisationFragment;
+
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
      */
     private CharSequence mTitle;
-    private TargetFileListener targetFileListener;
-    private TrialFileListener trialFileListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +41,7 @@ public class MainActivity extends ActionBarActivity
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
-        visualisationFragment = (VisualisationFragment)
-                getSupportFragmentManager().findFragmentById(R.id.visualisation);
+
         // Set up the drawer.
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
@@ -54,7 +53,7 @@ public class MainActivity extends ActionBarActivity
         // update the main content by replacing fragments
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
+                .replace(R.id.container, RecordFragment.newInstance())
                 .commit();
     }
 
@@ -62,7 +61,10 @@ public class MainActivity extends ActionBarActivity
         switch (number) {
             case 1:
                 mTitle = getString(R.string.title_section1);
-                visualisationFragment.onFileChange("http:\\www.greenend.org.uk\\rjk\\junk\\avatar-small.png");
+
+
+
+
                 break;
             case 2:
                 mTitle = getString(R.string.title_section2);
@@ -83,6 +85,7 @@ public class MainActivity extends ActionBarActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        /*
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
             // Only show items in the action bar relevant to this screen
             // if the drawer is not showing. Otherwise, let the drawer
@@ -91,6 +94,7 @@ public class MainActivity extends ActionBarActivity
             restoreActionBar();
             return true;
         }
+        */
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -110,7 +114,7 @@ public class MainActivity extends ActionBarActivity
     }
 
     @Override
-    public void onFragmentInteraction(Bitmap uri) {
+    public void onFragmentInteraction(Uri uri) {
 
     }
 
@@ -142,7 +146,7 @@ public class MainActivity extends ActionBarActivity
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_record, container, false);
             return rootView;
         }
 
