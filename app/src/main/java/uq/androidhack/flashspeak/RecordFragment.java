@@ -2,9 +2,11 @@ package uq.androidhack.flashspeak;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.os.Environment;
@@ -18,11 +20,28 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -166,6 +185,8 @@ public class RecordFragment extends Fragment {
         mRecordButton = (Button) rootView.findViewById(R.id.button_record);
         mPlayButton = (Button) rootView.findViewById(R.id.button_play);
 
+        Button submitSound = (Button) rootView.findViewById(R.id.button_submit_recording);
+
         mPlayButton.setText("Play your recording");
         mRecordButton.setText("Start recording");
 
@@ -180,7 +201,69 @@ public class RecordFragment extends Fragment {
             }
         });
 
+        submitSound.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                File file = new File(mFileName);
+                new UploadAsyncTask().doInBackground(file);
+
+            }
+
+        });
+
         return rootView;
+    }
+
+    class UploadAsyncTask extends AsyncTask<File, Void, Integer> {
+        private File soundFile;
+
+        @Override
+        protected Integer doInBackground(File... params) {
+            soundFile = params[0];
+
+            try {
+                HttpClient httpclient = new DefaultHttpClient();
+
+                HttpPost httppost = new HttpPost("http://118.138.242.136/flashspeak/receive.php");
+
+                InputStreamEntity reqEntity = new InputStreamEntity(new FileInputStream(soundFile), -1);
+                reqEntity.setContentType("binary/octet-stream");
+                reqEntity.setChunked(true); // Send in multiple parts if needed
+                httppost.setEntity(reqEntity);
+
+                try {
+                    HttpResponse response = httpclient.execute(httppost);
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                    final StringBuilder out = new StringBuilder();
+                    String line;
+                    try {
+                        while ((line = rd.readLine()) != null) {
+                            out.append(line);
+                        }
+                    } catch (Exception e) {}
+                    // wr.close();
+                    try {
+                        rd.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    // final String serverResponse = slurp(is);
+                    Log.d("POST RESPONSE", "serverResponse: " + out.toString());
+                } catch (ClientProtocolException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                //Do something with response...
+
+            } catch (Exception e) {
+                // show error
+            }
+
+            return 0;
+        }
     }
 
 
