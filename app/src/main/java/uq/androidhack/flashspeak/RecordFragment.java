@@ -146,6 +146,8 @@ public class RecordFragment extends Fragment {
         // Create a VisualizerView (defined below), which will render the simplified audio
         // wave form to a Canvas.
 
+        mLinearLayout.removeAllViews();
+
         //You need to have something where to show Audio WAVE - in this case Canvas
         mVisualizerView = new VisualizerView(this.getActivity().getApplicationContext());
         mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
@@ -308,6 +310,7 @@ public class RecordFragment extends Fragment {
         btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mLinearLayout.removeAllViews();
                 mPlayer = new MediaPlayer();
                 try {
                     AssetFileDescriptor afd = v.getContext().getResources().openRawResourceFd(R.raw.alherrkwe_muddywater);
@@ -331,6 +334,10 @@ public class RecordFragment extends Fragment {
         ImageView recordImage = (ImageView) rootView.findViewById(R.id.record_button_image);
         recordImage.setImageResource(R.drawable.record_button);
 
+        ImageView playImage = (ImageView) rootView.findViewById(R.id.play_button_image);
+        playImage.setImageResource(R.drawable.play_button);
+
+        ((ImageView) rootView.findViewById(R.id.sourceGraphVisualisation)).setImageResource(R.drawable.muddywater);
 
         recordImage.setOnTouchListener(new View.OnTouchListener() {
             private Handler mHandler;
@@ -368,6 +375,29 @@ public class RecordFragment extends Fragment {
                 }
             };
 
+        });
+
+        playImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPlayer = new MediaPlayer();
+                try {
+                    AssetFileDescriptor afd = v.getContext().getResources().openRawResourceFd(R.raw.alherrkwe_muddywater);
+
+                    mPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getDeclaredLength());
+                    mPlayer.prepare();
+                    mPlayer.start();
+
+                    afd.close();
+
+                    //setupVisualizerFxAndUI();
+                    //mVisualizer.setEnabled(true);
+                    //mStatusTextView.setText("Playing audio...");
+
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "prepare() failed");
+                }
+            }
         });
 
 
@@ -509,6 +539,9 @@ public class RecordFragment extends Fragment {
 
                     ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
                     new DownloadImageTask(imageView).execute("http://118.138.242.136:9000/lastImage");
+
+                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Loading...");
+                    //((TextView) v.findViewById(R.id.recorded_label)).setVisibility(View.VISIBLE);
                     //mListener.hasNewImage("http://118.138.242.136:9000/lastImage");
 
 
@@ -558,6 +591,7 @@ public class RecordFragment extends Fragment {
 
             protected void onPostExecute(Bitmap result) {
                 bmImage.setImageBitmap(result);
+                ((TextView) v.findViewById(R.id.recorded_label)).setText("Recorded Spectrograph");
             }
         }
 

@@ -4,6 +4,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
+    android:background="@android:color/white"
     tools:context="uq.androidhack.flashspeak.RecordFragment"
     android:orientation="vertical">
 
@@ -31,6 +32,7 @@
         android:layout_height="wrap_content"
         android:text="Play Sample"
         android:id="@+id/play_sample"
+        android:visibility="gone"
         android:layout_gravity="center_horizontal" />
 
     <Button
@@ -42,23 +44,68 @@
         android:id="@+id/button_submit_recording"
         android:layout_gravity="center_horizontal" />
 
-    <ImageView
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <ImageView
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:id="@+id/record_button_image"
+        android:id="@+id/play_button_image"
+            android:layout_margin="5dp"
         android:layout_gravity="center_horizontal"
         />
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_margin="5dp"
+            android:layout_height="80dp"
+            android:id="@+id/record_button_image"
+            android:layout_gravity="center_horizontal"
+            />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:orientation="vertical"
+        android:visibility="gone"
         android:id="@+id/linear_layout_wave"></LinearLayout>
 
-    <ImageView
-        android:layout_width="wrap_content"
+    <TextView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text="Sample Spectrograph"
+        android:gravity="center"
+        android:layout_margin="5dp"
+        android:textSize="20dp"
+        android:id="@+id/source_label"
+        android:textColor="@android:color/black"
+        />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:id="@+id/sourceGraphVisualisation"
+        android:layout_gravity="center_horizontal" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recorded Spectrograph"
+        android:gravity="center"
+        android:layout_margin="5dp"
+        android:id="@+id/recorded_label"
+        android:textSize="20dp"
+        android:textColor="@android:color/black"
+        />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
         android:id="@+id/sampleGraphVisualisation"
-        android:layout_gravity="center_horizontal|top" />
+        android:layout_gravity="center_horizontal" />
 
 </LinearLayout>
