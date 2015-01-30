@@ -416,27 +416,8 @@ public class RecordFragment extends Fragment {
                 // notify user that file has been uploaded
                 //notification.finished();
             } catch ( Exception e ) {
-                //Log.e( "UPLOAD", "exception: " + sUrl, e );
-                // file upload failed so abort post and close connection
                 p.abort();
                 client.getConnectionManager().shutdown();
-
-                // get user preferences and number of retries for failed upload
-                //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-                //int maxRetries = Integer.valueOf( prefs.getString( "retries", "" ).substring( 1 ) );
-
-                // check if we can connect to internet and if we still have any tries left
-                // to try upload again
-                /*if( CheckInternet.getInstance().canConnect( context, prefs ) && retries < maxRetries ) {
-                    // remove notification for failed upload and queue item again
-                    Log.i( TAG, "will retry" );
-                    notification.remove();
-                    queue.execute( new MiltonPutUploader( context, queue, item, config, retries + 1 ) );
-                } else {
-                    // upload failed, so let's notify user
-                    Log.i( TAG, "will not retry" );
-                    notification.failed();
-                }*/
             }
 
 
