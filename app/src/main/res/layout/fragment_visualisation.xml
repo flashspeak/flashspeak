@@ -3,8 +3,6 @@
     android:layout_height="match_parent"
     tools:context="uq.androidhack.flashspeak.VisualisationFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="fill_parent"
@@ -21,6 +19,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/usersAudioSampleVisualisation"
             android:layout_gravity="center_horizontal|bottom" />
+
     </LinearLayout>
 
 </FrameLayout>

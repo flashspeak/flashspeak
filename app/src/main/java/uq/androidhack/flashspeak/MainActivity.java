@@ -1,6 +1,7 @@
 package uq.androidhack.flashspeak;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
@@ -21,7 +22,7 @@ import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks, RecordFragment.OnFragmentInteractionListener{
+        implements NavigationDrawerFragment.NavigationDrawerCallbacks, RecordFragment.OnFragmentInteractionListener, VisualisationFragment.OnFragmentInteractionListener{
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -62,12 +63,14 @@ public class MainActivity extends ActionBarActivity
             case 1:
                 mTitle = getString(R.string.title_section1);
 
-
-
-
                 break;
             case 2:
                 mTitle = getString(R.string.title_section2);
+
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                fragmentManager.beginTransaction()
+                        .replace(R.id.container, VisualisationFragment.newInstance())
+                        .commit();
                 break;
             case 3:
                 mTitle = getString(R.string.title_section3);
@@ -118,9 +121,15 @@ public class MainActivity extends ActionBarActivity
 
     }
 
+    @Override
+    public void onFragmentInteraction(Bitmap uri) {
+
+    }
+
     /**
      * A placeholder fragment containing a simple view.
      */
+    @Deprecated
     public static class PlaceholderFragment extends Fragment {
         /**
          * The fragment argument representing the section number for this
@@ -157,5 +166,6 @@ public class MainActivity extends ActionBarActivity
                     getArguments().getInt(ARG_SECTION_NUMBER));
         }
     }
+
 
 }

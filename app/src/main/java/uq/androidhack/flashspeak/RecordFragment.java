@@ -1,13 +1,22 @@
 package uq.androidhack.flashspeak;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.media.audiofx.Visualizer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Environment;
 import android.util.Log;
@@ -19,16 +28,25 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
+import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.params.HttpParams;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -41,6 +59,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +87,102 @@ public class RecordFragment extends Fragment {
     public Boolean isRecording = false;
     public Boolean isPlaying = false;
     public Boolean hasSound = false;
+
+    //Constants for vizualizator - HEIGHT 50dip
+    private static final float VISUALIZER_HEIGHT_DIP = 80f;
+
+    //Your MediaPlayer
+    MediaPlayer mp;
+
+    //Vizualization
+    private Visualizer mVisualizer;
+
+    private LinearLayout mLinearLayout;
+    private VisualizerView mVisualizerView;
+    private TextView mStatusTextView;
+
+    /**
+     * A simple class that draws waveform data received from a
+     * {@link Visualizer.OnDataCaptureListener#onWaveFormDataCapture }
+     */
+    class VisualizerView extends View {
+        private byte[] mBytes;
+        private float[] mPoints;
+        private Rect mRect = new Rect();
+
+        private Paint mForePaint = new Paint();
+
+        public VisualizerView(Context context) {
+            super(context);
+            init();
+        }
+
+        private void init() {
+            mBytes = null;
+
+            mForePaint.setStrokeWidth(1f);
+            mForePaint.setAntiAlias(true);
+            mForePaint.setColor(Color.rgb(0, 128, 255));
+        }
+
+        public void updateVisualizer(byte[] bytes) {
+            mBytes = bytes;
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            if (mBytes == null) {
+                return;
+            }
+
+            if (mPoints == null || mPoints.length < mBytes.length * 4) {
+                mPoints = new float[mBytes.length * 4];
+            }
+
+            mRect.set(0, 0, getWidth(), getHeight());
+
+            for (int i = 0; i < mBytes.length - 1; i++) {
+                mPoints[i * 4] = mRect.width() * i / (mBytes.length - 1);
+                mPoints[i * 4 + 1] = mRect.height() / 2
+                        + ((byte) (mBytes[i] + 128)) * (mRect.height() / 2) / 128;
+                mPoints[i * 4 + 2] = mRect.width() * (i + 1) / (mBytes.length - 1);
+                mPoints[i * 4 + 3] = mRect.height() / 2
+                        + ((byte) (mBytes[i + 1] + 128)) * (mRect.height() / 2) / 128;
+            }
+
+            canvas.drawLines(mPoints, mForePaint);
+        }
+    }
+
+    //Our method that sets Vizualizer
+    private void setupVisualizerFxAndUI() {
+        // Create a VisualizerView (defined below), which will render the simplified audio
+        // wave form to a Canvas.
+
+        //You need to have something where to show Audio WAVE - in this case Canvas
+        mVisualizerView = new VisualizerView(this.getActivity().getApplicationContext());
+        mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (int)(VISUALIZER_HEIGHT_DIP * getResources().getDisplayMetrics().density)));
+        mLinearLayout.addView(mVisualizerView);
+
+        // Create the Visualizer object and attach it to our media player.
+        //YOU NEED android.permission.RECORD_AUDIO for that in AndroidManifest.xml
+        mVisualizer = new Visualizer(mPlayer.getAudioSessionId());
+        mVisualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+        mVisualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+            public void onWaveFormDataCapture(Visualizer visualizer, byte[] bytes,
+                                              int samplingRate) {
+                mVisualizerView.updateVisualizer(bytes);
+            }
+
+            public void onFftDataCapture(Visualizer visualizer, byte[] bytes, int samplingRate) {}
+        }, Visualizer.getMaxCaptureRate() / 2, true, false);
+    }
+
 
     private void onRecord() {
         if (!isRecording) {
@@ -100,6 +215,11 @@ public class RecordFragment extends Fragment {
             mPlayer.setDataSource(mFileName);
             mPlayer.prepare();
             mPlayer.start();
+
+            setupVisualizerFxAndUI();
+            mVisualizer.setEnabled(true);
+            //mStatusTextView.setText("Playing audio...");
+
         } catch (IOException e) {
             Log.e(LOG_TAG, "prepare() failed");
         }
@@ -158,6 +278,14 @@ public class RecordFragment extends Fragment {
         if (getArguments() != null) {
 
         }
+
+        //set content view to new Layout that we create
+        //setContentView(mLinearLayout);
+
+        //start media player - like normal
+        mp = new MediaPlayer();
+
+
         /*
         mRecordButton = (Button) getView().findViewById(R.id.button_record);
         mPlayButton = (Button) getView().findViewById(R.id.button_play);
@@ -180,6 +308,13 @@ public class RecordFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         final View rootView = inflater.inflate(R.layout.fragment_record, container, false);
+
+        //Info textView
+        mStatusTextView = new TextView(this.getActivity().getApplicationContext());
+        //Create new LinearLayout ( because main.xml is empty )
+        mLinearLayout = (LinearLayout) rootView.findViewById(R.id.linear_layout_wave);
+        //mLinearLayout.setOrientation(LinearLayout.VERTICAL);
+        mLinearLayout.addView(mStatusTextView);
 
 
         mRecordButton = (Button) rootView.findViewById(R.id.button_record);
@@ -222,44 +357,84 @@ public class RecordFragment extends Fragment {
         protected Integer doInBackground(File... params) {
             soundFile = params[0];
 
+            URI url = URI.create("http://118.138.242.136:9000/echoLs");
+            HttpPut p = new HttpPut( url );
+            DefaultHttpClient client = new DefaultHttpClient();
+
             try {
-                HttpClient httpclient = new DefaultHttpClient();
+                // new file and and entity
+                File file = soundFile;
 
-                HttpPost httppost = new HttpPost("http://118.138.242.136/flashspeak/receive.php");
+                byte[] bytes = null;
+                ByteArrayEntity requestEntity = null;
 
-                InputStreamEntity reqEntity = new InputStreamEntity(new FileInputStream(soundFile), -1);
-                reqEntity.setContentType("binary/octet-stream");
-                reqEntity.setChunked(true); // Send in multiple parts if needed
-                httppost.setEntity(reqEntity);
+                try
+                {
+                    InputStream inputStream = new FileInputStream(file);
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    byte[] b = new byte[1024*8];
+                    int bytesRead =0;
 
-                try {
-                    HttpResponse response = httpclient.execute(httppost);
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-                    final StringBuilder out = new StringBuilder();
-                    String line;
-                    try {
-                        while ((line = rd.readLine()) != null) {
-                            out.append(line);
-                        }
-                    } catch (Exception e) {}
-                    // wr.close();
-                    try {
-                        rd.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    while ((bytesRead = inputStream.read(b)) != -1)
+                    {
+                        bos.write(b, 0, bytesRead);
                     }
-                    // final String serverResponse = slurp(is);
-                    Log.d("POST RESPONSE", "serverResponse: " + out.toString());
-                } catch (ClientProtocolException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
+
+                    bytes = bos.toByteArray();
+                    requestEntity = new ByteArrayEntity( bytes );
+                }
+                catch (IOException e)
+                {
                     e.printStackTrace();
                 }
 
-                //Do something with response...
+                HttpParams clientParams = client.getParams();
+                clientParams.setParameter( CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1 );
+                clientParams.setParameter( CoreConnectionPNames.SO_TIMEOUT, new Integer( 15000 ) );
+                clientParams.setParameter( CoreConnectionPNames.CONNECTION_TIMEOUT, new Integer( 15000 ) );
 
-            } catch (Exception e) {
-                // show error
+                p.setEntity( requestEntity );
+
+                p.getParams().setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, false);
+
+                Log.i( "UPLOAD", "execute" );
+                HttpResponse response = client.execute( p );
+
+                StatusLine line = response.getStatusLine();
+                Log.i( "UPLOAD", "complete: " + line );
+
+                // return code indicates upload failed so throw exception
+                if( line.getStatusCode() < 200 || line.getStatusCode() >= 300 ) {
+                    throw new Exception( "Failed upload" );
+                }
+
+                // shut down connection
+                client.getConnectionManager().shutdown();
+
+                // notify user that file has been uploaded
+                //notification.finished();
+            } catch ( Exception e ) {
+                //Log.e( "UPLOAD", "exception: " + sUrl, e );
+                // file upload failed so abort post and close connection
+                p.abort();
+                client.getConnectionManager().shutdown();
+
+                // get user preferences and number of retries for failed upload
+                //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                //int maxRetries = Integer.valueOf( prefs.getString( "retries", "" ).substring( 1 ) );
+
+                // check if we can connect to internet and if we still have any tries left
+                // to try upload again
+                /*if( CheckInternet.getInstance().canConnect( context, prefs ) && retries < maxRetries ) {
+                    // remove notification for failed upload and queue item again
+                    Log.i( TAG, "will retry" );
+                    notification.remove();
+                    queue.execute( new MiltonPutUploader( context, queue, item, config, retries + 1 ) );
+                } else {
+                    // upload failed, so let's notify user
+                    Log.i( TAG, "will not retry" );
+                    notification.failed();
+                }*/
             }
 
             return 0;
