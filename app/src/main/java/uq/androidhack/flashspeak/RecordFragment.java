@@ -2,6 +2,7 @@ package uq.androidhack.flashspeak;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -303,8 +304,33 @@ public class RecordFragment extends Fragment {
         //mLinearLayout.setOrientation(LinearLayout.VERTICAL);
         mLinearLayout.addView(mStatusTextView);
 
+        Button btnPlay = (Button) rootView.findViewById(R.id.play_sample);
+        btnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPlayer = new MediaPlayer();
+                try {
+                    AssetFileDescriptor afd = v.getContext().getResources().openRawResourceFd(R.raw.alherrkwe_muddywater);
+
+                    mPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getDeclaredLength());
+                    mPlayer.prepare();
+                    mPlayer.start();
+
+                    afd.close();
+
+                    //setupVisualizerFxAndUI();
+                    //mVisualizer.setEnabled(true);
+                    //mStatusTextView.setText("Playing audio...");
+
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "prepare() failed");
+                }
+            }
+        });
+
         ImageView recordImage = (ImageView) rootView.findViewById(R.id.record_button_image);
         recordImage.setImageResource(R.drawable.record_button);
+
 
         recordImage.setOnTouchListener(new View.OnTouchListener() {
             private Handler mHandler;
@@ -326,6 +352,9 @@ public class RecordFragment extends Fragment {
                         hasSound = true;
                         v.setScaleX(1f);
                         v.setScaleY(1f);
+
+                        File file = new File(mFileName);
+                        new UploadAsyncTask(rootView).execute(file);
 
                         return true;
                 }
