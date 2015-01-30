@@ -7,18 +7,14 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.ArrayAdapter;
-import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity
@@ -121,6 +117,18 @@ public class MainActivity extends ActionBarActivity
 
     }
 
+    public VisualisationFragment vf;
+
+    @Override
+    public void hasNewImage(String b) {
+
+        Log.i("IMAGE", "New image!");
+
+        //vf = (VisualisationFragment) getSupportFragmentManager().findFragmentById(R.id.visualisation_fragment_frame);
+        //vf.onFinishProcessing(b);
+
+    }
+
     @Override
     public void onFragmentInteraction(Bitmap uri) {
 
@@ -129,7 +137,6 @@ public class MainActivity extends ActionBarActivity
     /**
      * A placeholder fragment containing a simple view.
      */
-    @Deprecated
     public static class PlaceholderFragment extends Fragment {
         /**
          * The fragment argument representing the section number for this
@@ -155,7 +162,10 @@ public class MainActivity extends ActionBarActivity
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_record, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+            //vf = rootView.findViewById(R.id.visualisation_fragment_frame);
+
             return rootView;
         }
 

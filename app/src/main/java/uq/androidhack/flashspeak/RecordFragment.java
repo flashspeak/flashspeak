@@ -2,69 +2,50 @@ package uq.androidhack.flashspeak;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.audiofx.Visualizer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URLConnection;
 import java.util.UUID;
 
 
@@ -233,11 +214,15 @@ public class RecordFragment extends Fragment {
     }
 
     private void startRecording() {
+
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_WB);
         mRecorder.setOutputFile(mFileName);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB);
+
+        Log.i("RECORD", "Now recording...");
+
 
         try {
             mRecorder.prepare();
@@ -318,6 +303,44 @@ public class RecordFragment extends Fragment {
         //mLinearLayout.setOrientation(LinearLayout.VERTICAL);
         mLinearLayout.addView(mStatusTextView);
 
+        ImageView recordImage = (ImageView) rootView.findViewById(R.id.record_button_image);
+        recordImage.setImageResource(R.drawable.record_button);
+
+        recordImage.setOnTouchListener(new View.OnTouchListener() {
+            private Handler mHandler;
+
+            @Override public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        Log.i("ACTION", "Action down");
+
+                        v.setScaleX(0.8f);
+                        v.setScaleY(0.8f);
+                        startRecording();
+
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        Log.i("ACTION", "Action up");
+
+                        stopRecording();
+                        hasSound = true;
+                        v.setScaleX(1f);
+                        v.setScaleY(1f);
+
+                        return true;
+                }
+                return false;
+            }
+
+            Runnable mAction = new Runnable() {
+                @Override public void run() {
+                    //Log.i("BUTTON", "Performing action...");
+                    //mHandler.postDelayed(this, 500);
+                }
+            };
+
+        });
+
 
         mRecordButton = (Button) rootView.findViewById(R.id.button_record);
         mPlayButton = (Button) rootView.findViewById(R.id.button_play);
@@ -343,7 +366,7 @@ public class RecordFragment extends Fragment {
             public void onClick(View v) {
 
                 File file = new File(mFileName);
-                new UploadAsyncTask().execute(file);
+                new UploadAsyncTask(rootView).execute(file);
 
             }
 
@@ -353,13 +376,58 @@ public class RecordFragment extends Fragment {
     }
 
     class UploadAsyncTask extends AsyncTask<File, Void, Integer> {
+
+        private View v;
+
+        public UploadAsyncTask(View rootView) {
+
+            v = rootView;
+
+        }
+
+        class GetLastImageAsyncTask extends AsyncTask<Integer, Void, Bitmap> {
+
+            @Override
+            protected Bitmap doInBackground(Integer... p) {
+                try {
+
+                    Log.i("DOWNLOAD", "now downloading image...");
+                    URL imageUrlObj = new URL("http://118.138.242.136:9000/lastImage");
+                    //Bitmap bmp = BitmapFactory.decodeStream((InputStream) imageUrlObj.getContent());
+                    //Log.i("DOWNLOAD", "image downloaded?");
+                    //mListener.hasNewImage(bmp);
+
+                    URL aURL = new URL("http://118.138.242.136:9000/lastImage");
+                    URLConnection conn = aURL.openConnection();
+                    conn.connect();
+                    InputStream is = conn.getInputStream();
+                    BufferedInputStream bis = new BufferedInputStream(is);
+                    Bitmap bm = BitmapFactory.decodeStream(bis);
+                    bis.close();
+                    is.close();
+
+                    return bm;
+
+                } catch (IOException e) {
+                    Log.e("DownloadImageAsyncTask", "Error reading bitmap", e);
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Bitmap bitmap) {
+                super.onPostExecute(bitmap);
+                //mListener.hasNewImage(bitmap);
+            }
+        }
+
         private File soundFile;
 
         @Override
         protected Integer doInBackground(File... params) {
             soundFile = params[0];
 
-            URI url = URI.create("http://118.138.242.136:9000/echoLs");
+            URI url = URI.create("http://118.138.242.136:9000/processIt");
             HttpPut p = new HttpPut( url );
             DefaultHttpClient client = new DefaultHttpClient();
 
@@ -404,6 +472,20 @@ public class RecordFragment extends Fragment {
 
                 StatusLine line = response.getStatusLine();
                 Log.i( "UPLOAD", "complete: " + line );
+                //Log.i("UPLOAD", response.)
+
+                if (line.getStatusCode() == 200) {
+
+                    //return 1;
+
+                    ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
+                    new DownloadImageTask(imageView).execute("http://118.138.242.136:9000/lastImage");
+                    //mListener.hasNewImage("http://118.138.242.136:9000/lastImage");
+
+
+                    //new GetLastImageAsyncTask().execute(0);
+
+                }
 
                 // return code indicates upload failed so throw exception
                 if( line.getStatusCode() < 200 || line.getStatusCode() >= 300 ) {
@@ -423,7 +505,36 @@ public class RecordFragment extends Fragment {
 
             return 0;
         }
+
+
+        private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+            ImageView bmImage;
+
+            public DownloadImageTask(ImageView bmImage) {
+                this.bmImage = bmImage;
+            }
+
+            protected Bitmap doInBackground(String... urls) {
+                String urldisplay = urls[0];
+                Bitmap mIcon11 = null;
+                try {
+                    InputStream in = new java.net.URL(urldisplay).openStream();
+                    mIcon11 = BitmapFactory.decodeStream(in);
+                } catch (Exception e) {
+                    Log.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
+                return mIcon11;
+            }
+
+            protected void onPostExecute(Bitmap result) {
+                bmImage.setImageBitmap(result);
+            }
+        }
+
     }
+
+
 
 
     @Override
@@ -456,6 +567,7 @@ public class RecordFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         public void onFragmentInteraction(Uri uri);
+        public void hasNewImage(String b);
     }
 
 }

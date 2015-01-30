@@ -1,5 +1,7 @@
 package uq.androidhack.flashspeak.interfaces;
 
+import android.graphics.Bitmap;
+
 import java.net.URI;
 
 /**
@@ -9,5 +11,5 @@ public interface TrialFileListener {
 
     public void onRecording(URI uri);
 
-    public void onFinishProcessing(URI uri);
+    public void onFinishProcessing(String b);
 }
