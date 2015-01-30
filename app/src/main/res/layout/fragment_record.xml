@@ -55,6 +55,7 @@
         android:layout_height="80dp"
         android:id="@+id/play_button_image"
             android:layout_margin="5dp"
+            android:visibility="gone"
         android:layout_gravity="center_horizontal"
         />
 

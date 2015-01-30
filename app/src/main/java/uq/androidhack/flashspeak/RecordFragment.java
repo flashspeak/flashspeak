@@ -218,6 +218,11 @@ public class RecordFragment extends Fragment {
 
     private void startRecording() {
 
+        File f = new File(mFileName);
+        f.delete();
+
+        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + UUID.randomUUID().toString()+".file";
+
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_WB);
@@ -257,9 +262,7 @@ public class RecordFragment extends Fragment {
     }
 
     public RecordFragment() {
-        // Required empty public constructor
-        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-        mFileName += "/"+ UUID.randomUUID().toString()+".3gp";
+        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + UUID.randomUUID().toString()+".file";
     }
 
     @Override
@@ -338,6 +341,26 @@ public class RecordFragment extends Fragment {
         playImage.setImageResource(R.drawable.play_button);
 
         ((ImageView) rootView.findViewById(R.id.sourceGraphVisualisation)).setImageResource(R.drawable.muddywater);
+        ((ImageView) rootView.findViewById(R.id.sourceGraphVisualisation)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mLinearLayout.removeAllViews();
+                mPlayer = new MediaPlayer();
+                try {
+
+                    AssetFileDescriptor afd = v.getContext().getResources().openRawResourceFd(R.raw.alherrkwe_muddywater);
+
+                    mPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getDeclaredLength());
+                    mPlayer.prepare();
+                    mPlayer.start();
+
+                    afd.close();
+
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "prepare() failed");
+                }
+            }
+        });
 
         recordImage.setOnTouchListener(new View.OnTouchListener() {
             private Handler mHandler;
@@ -408,6 +431,8 @@ public class RecordFragment extends Fragment {
 
         mPlayButton.setText("Play your recording");
         mRecordButton.setText("Start recording");
+
+        ((TextView) rootView.findViewById(R.id.recorded_label)).setText("Tap record button to start recording...");
 
         mPlayButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -537,8 +562,29 @@ public class RecordFragment extends Fragment {
 
                     //return 1;
 
+                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Recorded Spectrograph");
+
                     ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
                     new DownloadImageTask(imageView).execute("http://118.138.242.136:9000/lastImage");
+
+                    imageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mPlayer = new MediaPlayer();
+                            try {
+                                mPlayer.setDataSource(mFileName);
+                                mPlayer.prepare();
+                                mPlayer.start();
+
+                                //setupVisualizerFxAndUI();
+                                //mVisualizer.setEnabled(true);
+                                //mStatusTextView.setText("Playing audio...");
+
+                            } catch (IOException e) {
+                                Log.e(LOG_TAG, "prepare() failed");
+                            }
+                        }
+                    });
 
                     //((TextView) v.findViewById(R.id.recorded_label)).setText("Loading...");
                     //((TextView) v.findViewById(R.id.recorded_label)).setVisibility(View.VISIBLE);
