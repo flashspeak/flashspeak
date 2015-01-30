@@ -58,7 +58,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -341,7 +343,7 @@ public class RecordFragment extends Fragment {
             public void onClick(View v) {
 
                 File file = new File(mFileName);
-                new UploadAsyncTask().doInBackground(file);
+                new UploadAsyncTask().execute(file);
 
             }
 
@@ -436,6 +438,7 @@ public class RecordFragment extends Fragment {
                     notification.failed();
                 }*/
             }
+
 
             return 0;
         }
