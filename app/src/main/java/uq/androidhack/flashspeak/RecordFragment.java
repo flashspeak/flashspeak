@@ -346,7 +346,7 @@ public class RecordFragment extends Fragment {
             public void onClick(View v) {
                 mLinearLayout.removeAllViews();
                 mPlayer = new MediaPlayer();
-                try {
+/*                try {
 
                     AssetFileDescriptor afd = v.getContext().getResources().openRawResourceFd(R.raw.alherrkwe_muddywater);
 
@@ -359,7 +359,7 @@ public class RecordFragment extends Fragment {
                 } catch (IOException e) {
                     Log.e(LOG_TAG, "prepare() failed");
                 }
-            }
+*/            }
         });
 
         recordImage.setOnTouchListener(new View.OnTouchListener() {
@@ -459,6 +459,43 @@ public class RecordFragment extends Fragment {
         return rootView;
     }
 
+
+    class GetLastImageAsyncTask extends AsyncTask<Integer, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(Integer... p) {
+            try {
+
+                Log.i("DOWNLOAD", "now downloading image...");
+                URL imageUrlObj = new URL("http://118.138.242.136:9000/lastImage");
+                //Bitmap bmp = BitmapFactory.decodeStream((InputStream) imageUrlObj.getContent());
+                //Log.i("DOWNLOAD", "image downloaded?");
+                //mListener.hasNewImage(bmp);
+
+                URL aURL = new URL("http://118.138.242.136:9000/lastImage");
+                URLConnection conn = aURL.openConnection();
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                BufferedInputStream bis = new BufferedInputStream(is);
+                Bitmap bm = BitmapFactory.decodeStream(bis);
+                bis.close();
+                is.close();
+
+                return bm;
+
+            } catch (IOException e) {
+                Log.e("DownloadImageAsyncTask", "Error reading bitmap", e);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            //mListener.hasNewImage(bitmap);
+        }
+    }
+
     class UploadAsyncTask extends AsyncTask<File, Void, Integer> {
 
         private View v;
@@ -469,43 +506,10 @@ public class RecordFragment extends Fragment {
 
         }
 
-        class GetLastImageAsyncTask extends AsyncTask<Integer, Void, Bitmap> {
-
-            @Override
-            protected Bitmap doInBackground(Integer... p) {
-                try {
-
-                    Log.i("DOWNLOAD", "now downloading image...");
-                    URL imageUrlObj = new URL("http://118.138.242.136:9000/lastImage");
-                    //Bitmap bmp = BitmapFactory.decodeStream((InputStream) imageUrlObj.getContent());
-                    //Log.i("DOWNLOAD", "image downloaded?");
-                    //mListener.hasNewImage(bmp);
-
-                    URL aURL = new URL("http://118.138.242.136:9000/lastImage");
-                    URLConnection conn = aURL.openConnection();
-                    conn.connect();
-                    InputStream is = conn.getInputStream();
-                    BufferedInputStream bis = new BufferedInputStream(is);
-                    Bitmap bm = BitmapFactory.decodeStream(bis);
-                    bis.close();
-                    is.close();
-
-                    return bm;
-
-                } catch (IOException e) {
-                    Log.e("DownloadImageAsyncTask", "Error reading bitmap", e);
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Bitmap bitmap) {
-                super.onPostExecute(bitmap);
-                //mListener.hasNewImage(bitmap);
-            }
-        }
-
         private File soundFile;
+
+        /** Holds whether the upload was successful, needed for post-processing */
+        int statusCode = 0;
 
         @Override
         protected Integer doInBackground(File... params) {
@@ -558,43 +562,6 @@ public class RecordFragment extends Fragment {
                 Log.i( "UPLOAD", "complete: " + line );
                 //Log.i("UPLOAD", response.)
 
-                if (line.getStatusCode() == 200) {
-
-                    //return 1;
-
-                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Recorded Spectrograph");
-
-                    ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
-                    new DownloadImageTask(imageView).execute("http://118.138.242.136:9000/lastImage");
-
-                    imageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mPlayer = new MediaPlayer();
-                            try {
-                                mPlayer.setDataSource(mFileName);
-                                mPlayer.prepare();
-                                mPlayer.start();
-
-                                //setupVisualizerFxAndUI();
-                                //mVisualizer.setEnabled(true);
-                                //mStatusTextView.setText("Playing audio...");
-
-                            } catch (IOException e) {
-                                Log.e(LOG_TAG, "prepare() failed");
-                            }
-                        }
-                    });
-
-                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Loading...");
-                    //((TextView) v.findViewById(R.id.recorded_label)).setVisibility(View.VISIBLE);
-                    //mListener.hasNewImage("http://118.138.242.136:9000/lastImage");
-
-
-                    //new GetLastImageAsyncTask().execute(0);
-
-                }
-
                 // return code indicates upload failed so throw exception
                 if( line.getStatusCode() < 200 || line.getStatusCode() >= 300 ) {
                     throw new Exception( "Failed upload" );
@@ -612,6 +579,38 @@ public class RecordFragment extends Fragment {
 
 
             return 0;
+        }
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
+            new DownloadImageTask(imageView).execute("http://118.138.242.136:9000/lastImage");
+
+            imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mPlayer = new MediaPlayer();
+                    try {
+                        mPlayer.setDataSource(mFileName);
+                        mPlayer.prepare();
+                        mPlayer.start();
+
+                        //setupVisualizerFxAndUI();
+                        //mVisualizer.setEnabled(true);
+                        //mStatusTextView.setText("Playing audio...");
+
+                    } catch (IOException e) {
+                        Log.e(LOG_TAG, "prepare() failed");
+                    }
+                }
+            });
+
+            //((TextView) v.findViewById(R.id.recorded_label)).setText("Loading...");
+            //((TextView) v.findViewById(R.id.recorded_label)).setVisibility(View.VISIBLE);
+            //mListener.hasNewImage("http://118.138.242.136:9000/lastImage");
+
+
+            //new GetLastImageAsyncTask().execute(0);
         }
 
 
