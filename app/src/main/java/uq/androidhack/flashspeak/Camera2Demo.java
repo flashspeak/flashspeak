@@ -47,6 +47,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -880,6 +881,8 @@ public class Camera2Demo extends Fragment
     }
 
     ImageView iv;
+    AnimationDrawable animation;
+    Drawable[] layers;
 
     @Override
     public void onClick(View view) {
@@ -907,6 +910,17 @@ public class Camera2Demo extends Fragment
                 //Declare the timer
                 //Set the schedule function and rate
                 Timer t = new Timer();
+                animation = new AnimationDrawable();
+                layers = new Drawable[4];
+                layers[0] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
+                layers[1] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.e));
+                layers[2] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.s));
+                layers[3] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
+
+                for(Drawable frame: layers){
+                    animation.addFrame(frame, 500);
+                }
+
                 t.scheduleAtFixedRate(new TimerTask() {
 
                   @Override
@@ -916,32 +930,16 @@ public class Camera2Demo extends Fragment
                         @Override
                         public void run() {
 
-                            final AnimationDrawable animation = new AnimationDrawable();
-                              final Drawable[] layers = new Drawable[6];
-                              layers[0] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
-                              layers[1] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.e));
-                              layers[2] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.s));
-                              layers[3] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
-                            for(Drawable frame: layers){
-//                                BitmapDrawable frame = new BitmapDrawable(image);
-                                animation.addFrame(frame, 500);
-                            }
-
-
-//                              TransitionDrawable transition = new TransitionDrawable(layers);
-//                              iv.setImageDrawable(transition);
-//                              transition.startTransition(2000);
-
                             iv.setImageDrawable(animation);
                             iv.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    getActivity().runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
+//                                    getActivity().runOnUiThread(new Runnable() {
+//                                        @Override
+//                                        public void run() {
                                             animation.start();
-                                        }
-                                    });
+//                                        }
+//                                    });
                                 }
                             });
 
