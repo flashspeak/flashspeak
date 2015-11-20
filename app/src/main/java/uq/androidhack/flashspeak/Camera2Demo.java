@@ -10,11 +10,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -24,6 +29,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.Face;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -35,11 +41,14 @@ import android.support.v13.app.FragmentCompat;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -51,10 +60,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import android.support.v4.app.Fragment;
+import android.widget.ViewFlipper;
+import android.graphics.drawable.TransitionDrawable;
 
 public class Camera2Demo extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
@@ -72,6 +85,8 @@ public class Camera2Demo extends Fragment
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
+    public static final int STATISTICS_FACE_DETECT_MODE_FULL = 2;
 
     /**
      * Tag for the {@link Log}.
@@ -262,6 +277,12 @@ public class Camera2Demo extends Fragment
             = new CameraCaptureSession.CaptureCallback() {
 
         private void process(CaptureResult result) {
+
+//            Integer mode = result.get(CaptureResult.STATISTICS_FACE_DETECT_MODE);
+//            Face [] faces = result.get(CaptureResult.STATISTICS_FACES);
+//            if(faces != null && mode != null)
+//                Log.e("tag", "faces : " + faces.length + " , mode : " + mode );
+
             switch (mState) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
@@ -322,6 +343,7 @@ public class Camera2Demo extends Fragment
         }
 
     };
+    private View rootView;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -404,6 +426,10 @@ public class Camera2Demo extends Fragment
 //        view.findViewById(R.id.picture).setOnClickListener(this);
 //        view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+
+        this.rootView = view;
+
+        view.findViewById(R.id.word_test_anim).setOnClickListener(this);
     }
 
     @Override
@@ -658,6 +684,10 @@ public class Camera2Demo extends Fragment
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
+//                                int max_count = characteristics.get(
+//                                        CameraCharacteristics.STATISTICS_INFO_MAX_FACE_COUNT);
+//                                int modes [] = characteristics.get(
+//                                        CameraCharacteristics.STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES);
 
             // Here, we create a CameraCaptureSession for camera preview.
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
@@ -680,10 +710,16 @@ public class Camera2Demo extends Fragment
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
+                                mPreviewRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE,
+                                        CameraMetadata.CONTROL_SCENE_MODE_FACE_PRIORITY);
+
                                 // Finally, we start displaying the camera preview.
                                 mPreviewRequest = mPreviewRequestBuilder.build();
                                 mCaptureSession.setRepeatingRequest(mPreviewRequest,
                                         mCaptureCallback, mBackgroundHandler);
+
+
+
                             } catch (CameraAccessException e) {
                                 e.printStackTrace();
                             }
@@ -843,6 +879,8 @@ public class Camera2Demo extends Fragment
         }
     }
 
+    ImageView iv;
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -850,14 +888,75 @@ public class Camera2Demo extends Fragment
 //                takePicture();
 //                break;
 //            }
-            case R.id.info: {
-                Activity activity = getActivity();
-                if (null != activity) {
-                    new AlertDialog.Builder(activity)
-                            .setMessage("HELLO")
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                }
+//            case R.id.info: {
+//                Activity activity = getActivity();
+//                if (null != activity) {
+//                    new AlertDialog.Builder(activity)
+//                            .setMessage("HELLO")
+//                            .setPositiveButton(android.R.string.ok, null)
+//                            .show();
+//                }
+//                break;
+//            }
+            case R.id.word_test_anim: {
+
+//                ViewFlipper vwf = (ViewFlipper) rootView.findViewById(R.id.imageflipper);
+                iv = (ImageView) rootView.findViewById(R.id.imageflipper);
+//                vwf.setFlipInterval(Integer.valueOf(1000));
+
+                //Declare the timer
+                //Set the schedule function and rate
+                Timer t = new Timer();
+                t.scheduleAtFixedRate(new TimerTask() {
+
+                  @Override
+                  public void run() {
+
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            final AnimationDrawable animation = new AnimationDrawable();
+                              final Drawable[] layers = new Drawable[6];
+                              layers[0] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
+                              layers[1] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.e));
+                              layers[2] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.s));
+                              layers[3] = new BitmapDrawable(getResources(), BitmapFactory.decodeResource(getResources(), R.raw.t));
+                            for(Drawable frame: layers){
+//                                BitmapDrawable frame = new BitmapDrawable(image);
+                                animation.addFrame(frame, 500);
+                            }
+
+
+//                              TransitionDrawable transition = new TransitionDrawable(layers);
+//                              iv.setImageDrawable(transition);
+//                              transition.startTransition(2000);
+
+                            iv.setImageDrawable(animation);
+                            iv.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            animation.start();
+                                        }
+                                    });
+                                }
+                            });
+
+                        }
+                    });
+
+                  }
+              },
+                //Set how long before to start calling the TimerTask (in milliseconds)
+                0,
+                //Set the amount of time between each execution (in milliseconds)
+                2000);
+
+
+
                 break;
             }
         }
