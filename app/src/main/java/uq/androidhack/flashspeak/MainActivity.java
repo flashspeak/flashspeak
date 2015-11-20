@@ -15,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
+//import android.support.v4.app.Fragment;
 
 
 public class MainActivity extends ActionBarActivity
@@ -40,18 +41,33 @@ public class MainActivity extends ActionBarActivity
         mTitle = getTitle();
 
         // Set up the drawer.
-        /*mNavigationDrawerFragment.setUp(
+        mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
-    */}
+    }
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, RecordFragment.newInstance())
-                .commit();
+        switch(position){
+            case 0:
+                fragmentManager.beginTransaction()
+                        .replace(R.id.container, RecordFragment.newInstance())
+                        .commit();
+                break;
+            case 1:
+                fragmentManager.beginTransaction()
+                        .replace(R.id.container, Camera2Demo.newInstance())
+                        .commit();
+                break;
+//            case 2:
+//                fragmentManager.beginTransaction()
+//                        .replace(R.id.container, CameraDemo.newInstance())
+//                        .commit();
+//                break;
+
+        }
     }
 
     public void onSectionAttached(int number) {
@@ -68,9 +84,9 @@ public class MainActivity extends ActionBarActivity
                         .replace(R.id.container, VisualisationFragment.newInstance())
                         .commit();
                 break;
-            case 3:
-                mTitle = getString(R.string.title_section3);
-                break;
+//            case 3:
+//                mTitle = getString(R.string.title_section3);
+//                break;
         }
     }
 
@@ -124,8 +140,8 @@ public class MainActivity extends ActionBarActivity
 
         Log.i("IMAGE", "New image!");
 
-        //vf = (VisualisationFragment) getSupportFragmentManager().findFragmentById(R.id.visualisation_fragment_frame);
-        //vf.onFinishProcessing(b);
+        vf = (VisualisationFragment) getSupportFragmentManager().findFragmentById(R.id.visualisation_fragment_frame);
+        vf.onFinishProcessing(b);
 
     }
 
@@ -162,9 +178,9 @@ public class MainActivity extends ActionBarActivity
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
 
-            //vf = rootView.findViewById(R.id.visualisation_fragment_frame);
+//            vf = rootView.findViewById(R.id.visualisation_fragment_frame);
 
             return rootView;
         }

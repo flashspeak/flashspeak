@@ -72,6 +72,8 @@ public class RecordFragment extends Fragment {
     public Boolean isPlaying = false;
     public Boolean hasSound = false;
 
+    private static final String SERVER_ADDRESS = "http://130.102.141.186:9000";
+
     //Constants for vizualizator - HEIGHT 50dip
     private static final float VISUALIZER_HEIGHT_DIP = 80f;
 
@@ -498,7 +500,20 @@ public class RecordFragment extends Fragment {
 
     class UploadAsyncTask extends AsyncTask<File, Void, Integer> {
 
-        private View v;
+                    Log.i("DOWNLOAD", "now downloading image...");
+                    URL imageUrlObj = new URL(SERVER_ADDRESS + "/lastImage");
+                    //Bitmap bmp = BitmapFactory.decodeStream((InputStream) imageUrlObj.getContent());
+                    //Log.i("DOWNLOAD", "image downloaded?");
+                    //mListener.hasNewImage(bmp);
+
+                    URL aURL = new URL(SERVER_ADDRESS + "/lastImage");
+                    URLConnection conn = aURL.openConnection();
+                    conn.connect();
+                    InputStream is = conn.getInputStream();
+                    BufferedInputStream bis = new BufferedInputStream(is);
+                    Bitmap bm = BitmapFactory.decodeStream(bis);
+                    bis.close();
+                    is.close();
 
         public UploadAsyncTask(View rootView) {
 
@@ -515,7 +530,7 @@ public class RecordFragment extends Fragment {
         protected Integer doInBackground(File... params) {
             soundFile = params[0];
 
-            URI url = URI.create("http://118.138.242.136:9000/processIt");
+            URI url = URI.create(SERVER_ADDRESS + "/processIt");
             HttpPut p = new HttpPut( url );
             DefaultHttpClient client = new DefaultHttpClient();
 
@@ -561,6 +576,43 @@ public class RecordFragment extends Fragment {
                 StatusLine line = response.getStatusLine();
                 Log.i( "UPLOAD", "complete: " + line );
                 //Log.i("UPLOAD", response.)
+
+                if (line.getStatusCode() == 200) {
+
+                    //return 1;
+
+                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Recorded Spectrograph");
+
+                    ImageView imageView = ((ImageView) v.findViewById(R.id.sampleGraphVisualisation));
+                    new DownloadImageTask(imageView).execute(SERVER_ADDRESS + "/lastImage");
+
+                    imageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mPlayer = new MediaPlayer();
+                            try {
+                                mPlayer.setDataSource(mFileName);
+                                mPlayer.prepare();
+                                mPlayer.start();
+
+                                //setupVisualizerFxAndUI();
+                                //mVisualizer.setEnabled(true);
+                                //mStatusTextView.setText("Playing audio...");
+
+                            } catch (IOException e) {
+                                Log.e(LOG_TAG, "prepare() failed");
+                            }
+                        }
+                    });
+
+                    //((TextView) v.findViewById(R.id.recorded_label)).setText("Loading...");
+                    //((TextView) v.findViewById(R.id.recorded_label)).setVisibility(View.VISIBLE);
+                    //mListener.hasNewImage("http://118.138.242.136:9000/lastImage");
+
+
+                    //new GetLastImageAsyncTask().execute(0);
+
+                }
 
                 // return code indicates upload failed so throw exception
                 if( line.getStatusCode() < 200 || line.getStatusCode() >= 300 ) {
